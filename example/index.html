@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <script src="three.js"></script>
+        <script src="stats.js"></script>
+        <script src="controls.js"></script>
+        <script src="../paging.js"></script>
+        <script>
+            var renderer, camera, scene, paging, stats, controls, t, geo, mat,
+                distance = new THREE.Vector3( 40, 20, 40 ),
+                size = 20, 
+                meshes = {};
+
+            var setup = function() {
+                paging = new Paging( camera, size, distance, {
+
+                    // triggered when a new page should be added (entered view)
+                    add: function( page ) {
+                        var mesh = new THREE.Mesh( geo, mat );
+                        mesh.position.copy( page.center() );
+                        scene.add( mesh );
+                        meshes[ page._hash ] = mesh;
+                    },
+
+                    // triggered when a page should be removed (left view)
+                    remove: function( page ) {
+                        scene.remove( meshes[ page._hash ] );
+                        delete meshes[ page._hash ];
+                    }
+                })
+            };
+
+            var init = function() {
+
+                //
+                renderer = new THREE.WebGLRenderer();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.setClearColor( 0x95a5a6 );
+                document.body.appendChild( renderer.domElement );
+
+                //
+                stats = new Stats();
+                stats.domElement.style.position = "absolute";
+                stats.domElement.style.top = "0px";
+                stats.domElement.style.left = "0px";
+                document.body.appendChild( stats.domElement );
+
+                //
+                var ratio = window.innerWidth / window.innerHeight;
+                camera = new THREE.PerspectiveCamera( 40, ratio, 1, 300 );
+                camera.position.z = 0;
+
+                //
+                controls = new THREE.FirstPersonControls( camera );
+                controls.movementSpeed = 10;
+                controls.lookSpeed = 0.05;
+
+                //
+                scene = new THREE.Scene();
+
+                //
+                // var geo = new THREE.SphereGeometry( 5, 16, 16 );
+                // var mat = new THREE.MeshBasicMaterial({ wireframe: true });
+                // var sphere = new THREE.Mesh( geo, mat );
+                // scene.add( sphere );
+
+
+                geo = new THREE.CubeGeometry( size, size, size, 1, 1, 1 );
+                mat = new THREE.MeshBasicMaterial({ wireframe: true });
+
+                t = performance.now();
+
+            };
+
+            var render = function() {
+                window.requestAnimationFrame( render );
+                controls.update( ( performance.now() - t ) / 1000 );
+
+                paging.update();
+                stats.update();
+                renderer.render( scene, camera );
+
+                t = performance.now();
+            };
+
+            init();
+            setup();
+            render();
+        </script>
+
+    </body>
+</html>
