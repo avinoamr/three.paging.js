@@ -8,24 +8,28 @@
     var Paging = function( object, size, distance, options ) {
         options || ( options = {} );
 
+        if ( "number" == typeof size  ) {
+            size = new THREE.Vector3( size, size, size );
+        }
+
         this.object = object;
         this.distance = distance;
         this.size = size;
-        this.halfsize = size / 2;
+        this.halfsize = new THREE.Vector3().copy( size ).multiplyScalar( .5 );
         this.position = null;
         this.add = ( options.add ) || function() {};
         this.remove = ( options.remove ) || function() {};
         this.pages = []; // page boxes currently in distance from object
 
         //
-        this._size = new THREE.Vector3( size, size, size );
         this._boxes = [];
         this._vs = [];
         this._pagesmap = {};
         this.look = new THREE.Vector3();
-        this.look.x = Math.ceil( distance.x / size );
-        this.look.y = Math.ceil( distance.y / size );
-        this.look.z = Math.ceil( distance.z / size );
+        this.look.x = Math.ceil( distance.x / size.x );
+        this.look.y = Math.ceil( distance.y / size.y );
+        this.look.z = Math.ceil( distance.z / size.z );
+        console.log( size instanceof Number );
     };
 
     //
@@ -35,9 +39,9 @@
     Paging.prototype.boxes = function() {
         // start with the current page
         var position = this.object.position,
-            xpage = Math.floor( ( position.x + this.halfsize ) / this.size ),
-            ypage = Math.floor( ( position.y + this.halfsize ) / this.size ),
-            zpage = Math.floor( ( position.z + this.halfsize ) / this.size );
+            xpage = Math.floor( ( position.x + this.halfsize.x ) / this.size.x ),
+            ypage = Math.floor( ( position.y + this.halfsize.y ) / this.size.y ),
+            zpage = Math.floor( ( position.z + this.halfsize.z ) / this.size.z );
 
         // build the center vectors of the pages
         var boxes = [], i = 0;
@@ -45,14 +49,14 @@
             for ( var y = -this.look.y ; y <= this.look.y ; y += 1 ) {
                 for ( var z = -this.look.z ; z <= this.look.z ; z += 1 ) {
 
-                    var xcenter = this.size * ( xpage + x ),
-                        ycenter = this.size * ( ypage + y ),
-                        zcenter = this.size * ( zpage + z ),
+                    var xcenter = this.size.x * ( xpage + x ),
+                        ycenter = this.size.y * ( ypage + y ),
+                        zcenter = this.size.z * ( zpage + z ),
                         center = new THREE.Vector3( xcenter, ycenter, zcenter ),
                         hash = [ center.x, center.y, center.z ].join( "," ),
                         box = new THREE.Box3();
 
-                    box.setFromCenterAndSize( center, this._size );
+                    box.setFromCenterAndSize( center, this.size );
                     box._distance = center.distanceTo( position );
                     box._center = center;
                     box._hash = hash;
@@ -79,9 +83,9 @@
         var position = this.object.position;
         if ( this.position ) {
             var d = new THREE.Vector3().subVectors( position, this.position );
-            if ( Math.abs( d.x ) < this.halfsize && 
-                 Math.abs( d.y ) < this.halfsize &&
-                 Math.abs( d.z ) < this.halfsize ) {
+            if ( Math.abs( d.x ) < this.halfsize.x && 
+                 Math.abs( d.y ) < this.halfsize.y &&
+                 Math.abs( d.z ) < this.halfsize.z ) {
                 return;
             }
         }
